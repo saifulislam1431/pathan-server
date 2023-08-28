@@ -55,6 +55,7 @@ const calculateCharges = (distance , weight) =>{
 }
 
 
+
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
   serverApi: {
@@ -94,6 +95,21 @@ app.get('/calculate-distance', (req, res) => {
     res.status(400).json({ error: 'Invalid district name' });
   } else {
     res.json({ distance });
+  }
+});
+
+
+app.get('/calculate-total-price', (req, res) => {
+  const { distance, weight,quantity } = req.query;
+
+  if (distance && weight) {
+    const adjustedWeight = parseFloat(weight) * parseFloat(quantity);
+    const shippingCharge = calculateCharges(distance, adjustedWeight);
+    const totalPrice = shippingCharge;
+    res.json({ totalPrice });
+    
+  } else {
+    res.status(400).json({ error: 'Invalid' });
   }
 });
 
