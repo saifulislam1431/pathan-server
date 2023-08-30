@@ -5,7 +5,7 @@ const port = process.env.PORT || 5000;
 const app = express();
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_User}:${process.env.DB_Pass}@cluster0.8cnv71c.mongodb.net/?retryWrites=true&w=majority`;
-
+const stripe = require("stripe")(process.env.STRIPE_INTENTS_SK)
 app.use(cors())
 app.use(express.json())
 
@@ -65,8 +65,58 @@ const client = new MongoClient(uri, {
   }
 });
 
+
 async function run() {
+  const floorsCollection = client.db("pathan").collection("floors");
+  const usersCollection = client.db("pathan").collection("users");
+  const paymentCollection = client.db("pathan").collection("payment");
   try {
+    app.get("/allFloors" , async(req,res)=>{
+      const result = await floorsCollection.find({}).toArray();
+      res.send(result)
+    })
+
+
+    app.post("/users", async (req, res) => {
+      const user = req.body;
+      const email = user.email;
+
+      const existUser = await usersCollection.findOne({ email: email });
+      if (existUser) {
+        return res.json("User Exist");
+      }
+      else {
+        const result = await usersCollection.insertOne(user);
+        res.send(result);
+      }
+    })
+
+
+    // Payment
+    app.post("/create-payment-intent", async (req, res) => {
+      const { price } = req.body;
+      const amount = price * 100;
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: "usd",
+        payment_method_types: [
+          "card"
+        ]
+      })
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      })
+    })
+
+
+    app.post("/payment", async (req, res) => {
+      const data = req.body;
+      const result = await paymentCollection.insertOne(data);
+      res.send(result)
+
+
+    })
+
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
     // Send a ping to confirm a successful connection
