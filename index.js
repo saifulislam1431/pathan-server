@@ -92,6 +92,20 @@ async function run() {
     })
 
 
+    app.get("/all-orders", async (req, res) => {
+      const email = req.query.email;
+      console.log(email);
+      if (!email) {
+        console.log("No");
+        return res.send([])
+        
+      }
+      const query = { email: email }
+      const result = await paymentCollection.find(query).toArray();
+      res.send(result)
+    })
+
+
     // Payment
     app.post("/create-payment-intent", async (req, res) => {
       const { price } = req.body;
